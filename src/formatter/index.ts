@@ -1,8 +1,12 @@
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import type { RawWordEntry, WordEntry } from '../types';
+
+const execFileAsync = promisify(execFile);
 
 type Language = 'en' | 'ja';
 
-interface ClaudeFormattedEntry {
+interface OpenClawFormattedEntry {
   pronunciation: string;
   example: string;
   examplePronunciation: string;
@@ -16,49 +20,11 @@ const PROMPTS: Record<Language, (items: RawWordEntry[]) => string> = {
 export async function generateFormatted(items: RawWordEntry[], language: Language): Promise<WordEntry[]> {
   if (items.length === 0) return [];
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error('ANTHROPIC_API_KEY is required');
-  }
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-3-5-sonnet-latest',
-      max_tokens: 2000,
-      temperature: 0.2,
-      messages: [
-        {
-          role: 'user',
-          content: PROMPTS[language](items),
-        },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Anthropic request failed: ${response.status} ${text}`);
-  }
-
-  const data = (await response.json()) as {
-    content?: Array<{ type: string; text?: string }>;
-  };
-
-  const text = data.content?.find((item) => item.type === 'text')?.text?.trim();
-  if (!text) {
-    throw new Error('Anthropic response did not contain text content');
-  }
-
-  const parsed = JSON.parse(extractJson(text)) as ClaudeFormattedEntry[];
+  const raw = await runOpenClawPrompt(PROMPTS[language](items));
+  const parsed = JSON.parse(extractJson(raw)) as OpenClawFormattedEntry[];
 
   if (parsed.length !== items.length) {
-    throw new Error(`Anthropic response length mismatch: expected ${items.length}, got ${parsed.length}`);
+    throw new Error(`OpenClaw response length mismatch: expected ${items.length}, got ${parsed.length}`);
   }
 
   return items.map((item, index) => ({
@@ -69,12 +35,34 @@ export async function generateFormatted(items: RawWordEntry[], language: Languag
   }));
 }
 
+async function runOpenClawPrompt(prompt: string): Promise<string> {
+  const bin = process.env.OPENCLAW_BIN || 'openclaw';
+  const args = ['run', '--print', prompt];
+
+  try {
+    const { stdout, stderr } = await execFileAsync(bin, args, {
+      maxBuffer: 1024 * 1024 * 4,
+      env: process.env,
+    });
+
+    const output = `${stdout}`.trim() || `${stderr}`.trim();
+    if (!output) {
+      throw new Error('OpenClaw returned empty output');
+    }
+
+    return output;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`OpenClaw generation failed: ${message}`);
+  }
+}
+
 function extractJson(text: string): string {
   const start = text.indexOf('[');
   const end = text.lastIndexOf(']');
 
   if (start === -1 || end === -1 || end < start) {
-    throw new Error('Could not find JSON array in Anthropic response');
+    throw new Error('Could not find JSON array in OpenClaw response');
   }
 
   return text.slice(start, end + 1);
