@@ -56,12 +56,12 @@ function buildDescription(words: DailyWords): string {
 
 function formatEntry(entry: WordEntry): string {
   return [
-    `${entry.word}`,
+    `📌 ${entry.word} (${entry.pronunciation})`,
     `의미: ${entry.meaning}`,
-    `발음: ${entry.pronunciation}`,
-    `예문: ${entry.example}`,
-    `예문 해석: ${entry.exampleTranslation}`,
-    `예문 발음: ${entry.examplePronunciation}`,
+    '',
+    `${entry.example}`,
+    `${entry.examplePronunciation}`,
+    `해석: ${entry.exampleTranslation}`,
   ].join('\n');
 }
 
