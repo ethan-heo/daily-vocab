@@ -4,6 +4,7 @@ import { buildFormattingPrompt, type Language } from './prompt';
 interface ClaudeFormattedEntry {
   pronunciation: string;
   example: string;
+  exampleTranslation: string;
   examplePronunciation: string;
 }
 
@@ -24,7 +25,7 @@ export async function generateFormatted(items: RawWordEntry[], language: Languag
     },
     body: JSON.stringify({
       model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest',
-      max_tokens: 2000,
+      max_tokens: 2400,
       temperature: 0.2,
       messages: [
         {
@@ -62,6 +63,7 @@ export function mergeFormattedEntries(items: RawWordEntry[], formatted: ClaudeFo
     ...item,
     pronunciation: formatted[index]?.pronunciation?.trim() || '',
     example: formatted[index]?.example?.trim() || '',
+    exampleTranslation: formatted[index]?.exampleTranslation?.trim() || '',
     examplePronunciation: formatted[index]?.examplePronunciation?.trim() || '',
   }));
 }

@@ -48,18 +48,19 @@ export async function upsertCalendarEvent(words: DailyWords): Promise<void> {
 }
 
 function buildDescription(words: DailyWords): string {
-  const english = words.english.map((entry, index) => formatEntry('영단어', index + 1, entry)).join('\n\n');
-  const japanese = words.japanese.map((entry, index) => formatEntry('일본어단어', index + 1, entry)).join('\n\n');
+  const english = words.english.map((entry) => formatEntry(entry)).join('\n\n');
+  const japanese = words.japanese.map((entry) => formatEntry(entry)).join('\n\n');
 
   return [english, '────────────────', japanese].filter(Boolean).join('\n\n');
 }
 
-function formatEntry(label: string, index: number, entry: WordEntry): string {
+function formatEntry(entry: WordEntry): string {
   return [
-    `${label}[${index}]: ${entry.word}`,
+    `${entry.word}`,
     `의미: ${entry.meaning}`,
     `발음: ${entry.pronunciation}`,
     `예문: ${entry.example}`,
+    `예문 해석: ${entry.exampleTranslation}`,
     `예문 발음: ${entry.examplePronunciation}`,
   ].join('\n');
 }

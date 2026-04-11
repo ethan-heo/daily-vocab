@@ -8,6 +8,7 @@ export interface WordEntry {
   meaning: string;
   pronunciation: string;
   example: string;
+  exampleTranslation: string;
   examplePronunciation: string;
 }
 
