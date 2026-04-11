@@ -1,0 +1,18 @@
+export interface RawWordEntry {
+  word: string;
+  meaning: string;
+}
+
+export interface WordEntry {
+  word: string;
+  meaning: string;
+  pronunciation: string;
+  example: string;
+  examplePronunciation: string;
+}
+
+export interface DailyWords {
+  date: string;
+  english: WordEntry[];
+  japanese: WordEntry[];
+}
