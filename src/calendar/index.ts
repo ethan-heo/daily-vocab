@@ -4,16 +4,18 @@ import type { DailyWords, WordEntry } from '../types';
 const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 
 export async function upsertCalendarEvent(words: DailyWords): Promise<void> {
+  const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON;
   const keyFile = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH;
   const calendarId = process.env.CALENDAR_ID;
 
-  if (!keyFile) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY_PATH is required');
+  if (!keyJson && !keyFile) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY_JSON or GOOGLE_SERVICE_ACCOUNT_KEY_PATH is required');
   if (!calendarId) throw new Error('CALENDAR_ID is required');
 
-  const auth = new google.auth.GoogleAuth({
-    keyFile,
-    scopes: SCOPES,
-  });
+  const authOptions = keyJson
+    ? { credentials: JSON.parse(keyJson) as object, scopes: SCOPES }
+    : { keyFile: keyFile!, scopes: SCOPES };
+
+  const auth = new google.auth.GoogleAuth(authOptions);
 
   const calendar = google.calendar({ version: 'v3', auth });
   const eventId = `vocab${words.date.replace(/-/g, '')}`;
