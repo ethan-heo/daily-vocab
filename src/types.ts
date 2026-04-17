@@ -1,3 +1,10 @@
+export interface NewsItem {
+  title: string;
+  url: string;
+  source: string;
+  publishedAt?: string;
+}
+
 export interface RawWordEntry {
   word: string;
   meaning: string;
