@@ -26,10 +26,12 @@ src/news/index.ts
 
 ### `src/news/run.ts`
 - `collectNews()`: Playwright 브라우저를 열고 스크래퍼별 새 페이지를 만든 뒤 `Promise.all`로 병렬 실행. URL 기준으로 중복 제거 후 반환
+- 오늘 날짜(KST)는 `src/shared/date.ts`의 `getTodayInSeoul()`로 계산
 - `saveNews()`: calendar.ts의 `upsertNewsEvent()` 호출
 
 ### `src/news/calendar.ts`
 - 이벤트 ID: `mag{YYYYMMDD}` (`news`의 `w`는 base32hex 범위 초과로 사용 불가)
+- 역할: news용 description 문자열을 만들고 `src/shared/googleCalendar.ts`의 `upsertAllDayCalendarEvent()`를 호출
 - 이벤트 구조:
   - summary: `📰 오늘의 뉴스 (YYYY-MM-DD)`
   - description: 아티클 목록 (소스·제목·URL)
@@ -50,8 +52,17 @@ src/news/index.ts
 - 대상: `https://www.smashingmagazine.com/articles/`
 - 컨테이너 셀렉터: `.article--post`
 - 게시일: 컨테이너 내부 `time[date]` 우선, 없으면 `time[datetime]` fallback
-- 필터: 게시일을 `YYYY-MM-DD`로 정규화한 뒤 오늘 날짜(KST)와 일치하는 항목만 수집
+- 필터: 게시일을 `YYYY-MM-DD`로 정규화한 뒤 `src/shared/date.ts` 기준 오늘 날짜(KST)와 일치하는 항목만 수집
 - 제목/URL: 컨테이너 내부 제목 링크(`h1~h4 a`) 기준으로 추출
+
+### `src/shared/date.ts`
+서울 기준 오늘 날짜와 다음 날짜를 `YYYY-MM-DD` 형식으로 계산하는 공통 유틸.
+
+### `src/shared/googleCalendar.ts`
+Google Calendar 종일 이벤트 upsert 공통 모듈.
+- 서비스 계정 인증 생성
+- `start.date`, `end.date` 계산
+- patch 후 404면 insert로 재시도
 
 ---
 
@@ -84,6 +95,7 @@ interface NewsItem {
 
 1. `src/scraper/`에 새 파일 생성 (`(page: Page) => Promise<NewsItem[]>` 시그니처)
 2. `src/news/run.ts`의 `scrapers` 배열에 추가
+3. 공통 날짜/캘린더 동작이 필요하면 `src/shared/` 유틸을 재사용
 
 ```ts
 // src/news/run.ts

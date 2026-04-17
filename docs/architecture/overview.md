@@ -18,21 +18,26 @@
 ```
 src/
 ├── types.ts                  # 공유 타입 (NewsItem, WordEntry 등)
+├── shared/                   # 기능 간 공통 유틸
+│   ├── date.ts               # 서울 기준 날짜 계산
+│   └── googleCalendar.ts     # Google Calendar 종일 이벤트 upsert
 ├── scraper/                  # 스크래퍼 (기능 간 공유)
+│   ├── naverWords.ts         # 네이버 오늘의 단어 공통 스크래핑
 │   ├── english.ts            # 네이버 영단어
 │   ├── japanese.ts           # 네이버 일본어 단어
+│   ├── smashingMagazine.ts   # Smashing Magazine 아티클
 │   └── yozm.ts               # 요즘IT 아티클
 ├── vocab/                    # 오늘의 단어 기능
 │   ├── index.ts              # 진입점
 │   ├── run.ts                # 오케스트레이터
-│   ├── calendar.ts           # Google Calendar 업로드
+│   ├── calendar.ts           # vocab 설명 생성 + 공통 캘린더 업로드 호출
 │   └── formatter/
 │       ├── index.ts          # Claude API 호출 및 파싱
 │       └── prompt.ts         # 언어별 프롬프트 정의
 └── news/                     # 오늘의 뉴스 기능
     ├── index.ts              # 진입점
     ├── run.ts                # 오케스트레이터
-    └── calendar.ts           # Google Calendar 업로드
+    └── calendar.ts           # news 설명 생성 + 공통 캘린더 업로드 호출
 ```
 
 각 기능(`vocab`, `news`)은 독립적인 진입점을 가지며 동일한 구조를 따른다.
@@ -42,14 +47,17 @@ src/
 ## 공통 실행 흐름
 
 ```
-index.ts  →  run.ts  →  scraper/*.ts   (데이터 수집)
-                     →  calendar.ts    (Google Calendar 업로드)
+index.ts  →  run.ts  →  scraper/*.ts             (데이터 수집)
+                     →  shared/date.ts           (서울 기준 날짜 계산)
+                     →  calendar.ts              (기능별 description 구성)
+                     →  shared/googleCalendar.ts (Google Calendar 업로드)
 ```
 
 1. `index.ts`: 진입점. 전체 흐름 조율 및 에러 처리
 2. `run.ts`: Playwright 브라우저 생성, 스크래퍼 실행, 결과 가공
 3. `scraper/*.ts`: 페이지별 스크래핑 로직
-4. `calendar.ts`: Google Calendar API로 종일 이벤트 upsert
+4. `calendar.ts`: 기능별 summary/description 생성
+5. `shared/googleCalendar.ts`: Google Calendar API로 종일 이벤트 upsert
 
 ---
 
@@ -62,7 +70,7 @@ index.ts  →  run.ts  →  scraper/*.ts   (데이터 수집)
 
 > Google Calendar 이벤트 ID는 base32hex 문자(`0-9`, `a-v`)만 허용한다.
 
-이벤트는 patch → 404 시 insert 방식으로 upsert 처리되어 중복 등록을 방지한다.
+이벤트는 `src/shared/googleCalendar.ts`에서 patch → 404 시 insert 방식으로 upsert 처리되어 중복 등록을 방지한다.
 
 ---
 

@@ -1,5 +1,6 @@
 import type { Page } from 'playwright';
 import type { NewsItem } from '../types';
+import { getTodayInSeoul } from '../shared/date';
 
 const LIST_URL = 'https://www.smashingmagazine.com/articles/';
 const CONTAINER = '.article--post';
@@ -47,13 +48,4 @@ function normalizeDate(value: string | null): string | null {
 
   const match = value.match(/\d{4}-\d{2}-\d{2}/);
   return match ? match[0] : null;
-}
-
-function getTodayInSeoul(): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date());
 }

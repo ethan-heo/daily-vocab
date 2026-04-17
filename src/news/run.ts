@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
 import { scrapeSmashingMagazine } from '../scraper/smashingMagazine';
 import { scrapeYozm } from '../scraper/yozm';
+import { getTodayInSeoul } from '../shared/date';
 import { upsertNewsEvent } from './calendar';
 import type { NewsItem } from '../types';
 
@@ -41,13 +42,4 @@ function deduplicateByUrl(items: NewsItem[]): NewsItem[] {
     seen.add(item.url);
     return true;
   });
-}
-
-function getTodayInSeoul(): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date());
 }
